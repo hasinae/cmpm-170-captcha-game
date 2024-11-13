@@ -42,10 +42,8 @@ export default class IntroScene extends Phaser.Scene {
     }
 
     showCredits() {
-        // Semi-transparent overlay for credits
         const creditsOverlay = this.add.rectangle(500, 400, 400, 350, 0x000000, 0.8).setOrigin(0.5);
         
-        // Centered credits text within the overlay
         const creditsText = this.add.text(500, 350, 'Hasina Esteqlal\n Samina Esteqlal\nPatrick James Alcantara\nRyo Safadi\n\nCMPM 170 Prototype 3\nThanks for Playing!', 
             { fontSize: '24px', fill: '#ffffff', align: 'center', lineSpacing: 10 })
             .setOrigin(0.5)
