@@ -249,3 +249,4 @@ export default class CaptchaScene extends Phaser.Scene {
         // Additional animations or timed events can be added here
     }
 }
+ 
