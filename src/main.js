@@ -8,7 +8,7 @@ const config = {
     render: {
         pixelArt: true 
     },
-    width: 1000,
+    width: 1050,
     height: 800,
     backgroundColor: '#39FF14',
     scene: [IntroScene, CaptchaScene]
