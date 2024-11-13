@@ -4,7 +4,6 @@ export default class CaptchaScene extends Phaser.Scene {
     }
 
     preload() {
-        // Load assets for CAPTCHA and distractions
         this.load.image('trafficlight1', 'assets/trafficlight1.jpg');
         this.load.image('trafficlight2', 'assets/trafficlight2.jpeg');
         this.load.image('trafficlight3', 'assets/trafficlight3.jpg');
@@ -17,9 +16,9 @@ export default class CaptchaScene extends Phaser.Scene {
 
     create() {
         this.score = 0;
-        this.timeLeft = 30; // Set a 30-second timer for the game
-        this.gameOver = false; // Track if the game is over
-        this.timerStarted = false; // Track if the timer has started
+        this.timeLeft = 30;
+        this.gameOver = false; 
+        this.timerStarted = false;
 
         // Set up crisp visuals
         this.cameras.main.setRoundPixels(true); // Rounds pixels to avoid blur
@@ -96,55 +95,11 @@ export default class CaptchaScene extends Phaser.Scene {
 
             // Assign click handlers based on image type
             const isCaptcha = imageKeys[index].includes('trafficlight');
-            image.on('pointerdown', () => this.handleCaptchaClick(isCaptcha));
+            image.on('pointerdown', () => this.handleCaptchaClick(isCaptcha, image));
         });
     }
 
-    swapAndMoveAllImages() {
-        if (this.gameOver) return; // Stop if the game is over
-
-        // Shuffle all grid positions
-        Phaser.Utils.Array.Shuffle(this.gridPositions);
-
-        // Apply new positions to all images and make them move side to side
-        this.allImages.forEach((image, index) => {
-            image.setPosition(this.gridPositions[index].x, this.gridPositions[index].y);
-
-            // Make each image move side to side within a random range
-            this.tweens.add({
-                targets: image,
-                x: image.x + Phaser.Math.Between(-50, 50), // Random small range side-to-side movement
-                duration: 1000,
-                yoyo: true,
-                repeat: -1
-            });
-        });
-    }
-
-    showAndMoveAd() {
-        if (this.gameOver) return;
-
-        // Show the ad and move it side to side
-        this.adImage.setVisible(true);
-        this.instructionText.setText("Select the traffic lights! Ignore the ad.");
-
-        // Move the ad side to side across the screen
-        this.tweens.add({
-            targets: this.adImage,
-            x: 600, // Moves to the right side
-            duration: 2000,
-            yoyo: true,
-            repeat: -1
-        });
-
-        // Hide the ad and reset the instruction text after 4 seconds
-        this.time.delayedCall(4000, () => {
-            this.adImage.setVisible(false);
-            this.instructionText.setText("Select the traffic lights!");
-        });
-    }
-
-    handleCaptchaClick(isCaptcha) {
+    handleCaptchaClick(isCaptcha, image) {
         if (this.gameOver) return;
 
         // Start the timer on the first click
@@ -161,6 +116,31 @@ export default class CaptchaScene extends Phaser.Scene {
             this.instructionText.setText('Oops! That’s not a traffic light.');
         }
         this.scoreText.setText(`Score: ${this.score}`);
+
+        // Fade out the image
+        this.tweens.add({
+            targets: image,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+                // Hide the image for 1 second
+                image.setVisible(false);
+
+                // Move to a new position
+                const newPosition = Phaser.Utils.Array.GetRandom(this.gridPositions);
+                image.setPosition(newPosition.x, newPosition.y);
+
+                // Show the image again after 1 second and fade it back in
+                this.time.delayedCall(1000, () => {
+                    image.setVisible(true);
+                    this.tweens.add({
+                        targets: image,
+                        alpha: 1,
+                        duration: 500
+                    });
+                });
+            }
+        });
     }
 
     handleAdClick() {
@@ -195,19 +175,73 @@ export default class CaptchaScene extends Phaser.Scene {
         this.time.removeAllEvents();
         this.allImages.forEach(image => image.disableInteractive());
         this.adImage.disableInteractive();
-
+    
         // Stop all active tweens to prevent movement
         this.tweens.killAll();
-
+    
         // Display "Game Over" message and final score
-        this.add.text(400, 300, 'Game Over!', { fontSize: '50px', fill: '#000000' }).setOrigin(0.5);
-        this.add.text(400, 350, `Final Score: ${this.score}`, { fontSize: '40px', fill: '#000000' }).setOrigin(0.5);
+        this.add.text(500, 300, 'Game Over!', { fontSize: '50px', fill: '#000000' }).setOrigin(0.5);
+        this.add.text(500, 350, `Final Score: ${this.score}`, { fontSize: '40px', fill: '#000000' }).setOrigin(0.5);
+    
+        // Create a return to menu button with a background rectangle and interactive text
+        const menuButtonBg = this.add.rectangle(500, 450, 200, 60, 0x006400).setOrigin(0.5);
+        const menuButtonText = this.add.text(500, 450, 'Main Menu', { fontSize: '36px', fill: '#00ff00' }).setOrigin(0.5).setInteractive();
+    
+        menuButtonText.on('pointerdown', () => {
+            this.scene.start('IntroScene'); // Go back to the main menu (IntroScene)
+        });
+        menuButtonText.on('pointerover', () => {
+            menuButtonText.setStyle({ fill: '#ff0000' });
+            menuButtonBg.setFillStyle(0x228B22);
+        });
+        menuButtonText.on('pointerout', () => {
+            menuButtonText.setStyle({ fill: '#00ff00' });
+            menuButtonBg.setFillStyle(0x006400);
+        });
+    }
+    
 
-        // Create a restart button
-        const restartButton = this.add.image(400, 450, 'restartButton').setInteractive().setDisplaySize(200, 80);
+    swapAndMoveAllImages() {
+        if (this.gameOver) return;
 
-        restartButton.on('pointerdown', () => {
-            this.scene.restart(); // Restart the scene
+        // Shuffle all grid positions
+        Phaser.Utils.Array.Shuffle(this.gridPositions);
+
+        // Apply new positions to all images and make them move side to side
+        this.allImages.forEach((image, index) => {
+            image.setPosition(this.gridPositions[index].x, this.gridPositions[index].y);
+
+            // Make each image move side to side within a random range
+            this.tweens.add({
+                targets: image,
+                x: image.x + Phaser.Math.Between(-50, 50),
+                duration: 1000,
+                yoyo: true,
+                repeat: -1
+            });
+        });
+    }
+
+    showAndMoveAd() {
+        if (this.gameOver) return;
+
+        // Show the ad and move it side to side
+        this.adImage.setVisible(true);
+        this.instructionText.setText("Select the traffic lights! Ignore the ad.");
+
+        // Move the ad side to side across the screen
+        this.tweens.add({
+            targets: this.adImage,
+            x: 600, // Moves to the right
+            duration: 2000,
+            yoyo: true,
+            repeat: -1
+        });
+
+        // Hide the ad and reset the instruction text after 4 seconds
+        this.time.delayedCall(4000, () => {
+            this.adImage.setVisible(false);
+            this.instructionText.setText("Select the traffic lights!");
         });
     }
 
